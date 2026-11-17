@@ -1,6 +1,17 @@
 package com.mariomanhique.drip
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -56,7 +67,7 @@ fun App(sharer: Sharer = Sharer { _, _ -> false }, photoPicker: PhotoPicker = Ph
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 private fun AppContent() {
     DripTheme {
@@ -75,8 +86,9 @@ private fun AppContent() {
             }
         }
         val screen = vm.stack.lastOrNull()
+        BackHandler(enabled = screen != null) { vm.back() }
         Scaffold(
-            // topBar = { DripHeader(state, vm, showBack = screen != null) },
+            topBar = { if (screen != null) BackBar(onBack = { vm.back() }) },
             bottomBar = {
                 NavigationBar {
                     Tab.entries.forEach {
@@ -132,4 +144,15 @@ private fun Modifier.dismissKeyboardOnOutsideInteraction(): Modifier {
     return this
         .nestedScroll(connection)
         .pointerInput(focus) { detectTapGestures { focus.clearFocus() } }
+}
+
+@Composable
+private fun BackBar(onBack: () -> Unit) {
+    androidx.compose.material3.Surface(color = androidx.compose.material3.MaterialTheme.colorScheme.background) {
+        Row(
+            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).height(48.dp)
+                .clickable(onClick = onBack).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { Text("‹  Back", fontSize = 16.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground) }
+    }
 }
