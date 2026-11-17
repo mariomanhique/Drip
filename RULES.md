@@ -161,3 +161,13 @@ Faces and bodies attract votes unrelated to the outfit. To reduce this:
 - Neck-down only: the app shows a face-zone guide and crops outfit images bottom-aligned, trimming the top of the frame. No beauty filters.
 - Photos stay on the device until cloud storage (Firebase) is added. The share card uses the photo when present.
 - Open: server-side face detection and moderation before a photo goes public.
+
+## 13. Backend (Firebase project drip-ae9a5)
+
+Source in `backend/`. Deploy: `cd backend && npm --prefix functions install && npx firebase-tools login && npx firebase-tools deploy` (needs the Blaze plan for Functions). Logic is a pure TypeScript port in `functions/src/rules.ts` (`npm --prefix functions test`).
+
+- **Server-only writes:** `userStats` (rating, counters, flags), `pointEvents`, `battles`, votes, challenge entry stats. Clients can't change ratings, points or results.
+- **Callables (europe-west1):** `createProfile` (16+ confirmation, unique handle), `startBattle` (vote-to-play, 3/day), `castVote`, `castChallengeVote`; moderator-only `resolveBattleReview`, `closeChallenge` (custom claim `moderator`).
+- **Scheduled `settleBattles`** every 5 min: expiry, matching, closing. `onReportCreated` auto-hides at 3 reports.
+- **Anonymity:** votes live in `battles/{id}/votes/{voterUid}` and are readable only by that voter. Tallies (`votesA`/`votesB`) are published only when a battle closes.
+- **Not yet enforced server-side:** challenge-vote spike checks (battle spikes are enforced), and photo uploads are not content-moderated.

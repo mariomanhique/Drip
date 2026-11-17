@@ -4,7 +4,7 @@ import Shared
 
 struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Self.Context) -> UIViewController {
-        MainViewControllerKt.MainViewController(auth: IosAuthService())
+        MainViewControllerKt.MainViewController(auth: IosAuthService(), backend: IosBackend())
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Self.Context) {}

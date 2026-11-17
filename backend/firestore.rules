@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // Profiles: created by the createProfile function; owner may edit only display fields.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow update: if me() == uid
+        && onlyChanges(['displayName', 'bio', 'interests'])
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 40
+        && request.resource.data.bio is string && request.resource.data.bio.size() <= 160;
+      allow create, delete: if false;
+    }
+    match /handles/{h} { allow read, write: if false; }
+
+    // Rating, counters, flags: server only.
+    match /userStats/{uid} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /pointEvents/{id} {
+      allow read: if signedIn() && resource.data.userId == me();
+      allow write: if false;
+    }
+
+    match /follows/{pair} {
+      allow read: if signedIn() && (resource.data.followerId == me() || resource.data.followedId == me());
+      allow create: if signedIn()
+        && request.resource.data.followerId == me()
+        && request.resource.data.followedId is string
+        && request.resource.data.followedId != me()
+        && pair == me() + '_' + request.resource.data.followedId
+        && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'at']);
+      allow delete: if signedIn() && resource.data.followerId == me();
+      allow update: if false;
+    }
+    match /blocks/{pair} {
+      allow read, delete: if signedIn() && resource.data.blockerId == me();
+      allow create: if signedIn()
+        && request.resource.data.blockerId == me()
+        && request.resource.data.blockedId is string
+        && pair == me() + '_' + request.resource.data.blockedId
+        && request.resource.data.keys().hasOnly(['blockerId', 'blockedId', 'at']);
+      allow update: if false;
+    }
+
+    match /challenges/{cid} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /entryStats/{oid} { allow read: if signedIn(); allow write: if false; }
+      // Who voted for what stays private to the voter.
+      match /votes/{vid} {
+        allow read: if signedIn() && resource.data.voterId == me();
+        allow write: if false;
+      }
+    }
+
+    match /outfits/{oid} {
+      allow read: if signedIn();
+      // Challenge entries use the id c_{challengeId}_{uid}: one entry per user per challenge.
+      allow create: if signedIn()
+        && request.resource.data.authorId == me()
+        && request.resource.data.hidden == false
+        && request.resource.data.caption is string && request.resource.data.caption.size() <= 280
+        && request.resource.data.createdAt == request.time
+        && (!('challengeId' in request.resource.data) || request.resource.data.challengeId == null
+          || (oid == 'c_' + request.resource.data.challengeId + '_' + me()
+              && get(/databases/$(database)/documents/challenges/$(request.resource.data.challengeId)).data.closed == false));
+      allow update: if signedIn() && resource.data.authorId == me()
+        && onlyChanges(['caption', 'category']);
+      allow delete: if signedIn() && resource.data.authorId == me();
+
+      match /props/{uid} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && uid == me();
+      }
+      match /comments/{cid} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.authorId == me()
+          && request.resource.data.outfitAuthorId == get(/databases/$(database)/documents/outfits/$(oid)).data.authorId
+          && request.resource.data.text is string && request.resource.data.text.size() <= 280
+          && request.resource.data.at == request.time;
+        allow delete: if signedIn() && resource.data.authorId == me();
+      }
+    }
+    match /users/{uid}/saves/{oid} {
+      allow read, write: if signedIn() && uid == me();
+    }
+
+    // Battles: written only by Cloud Functions. Votes are private, so voting stays anonymous.
+    match /battles/{bid} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /votes/{vid} {
+        allow read: if signedIn() && vid == me();
+        allow write: if false;
+      }
+    }
+
+    // Collection-group reads used by the app: my own votes (challenge + battle), props and comments.
+    match /{path=**}/votes/{vid} {
+      allow read: if signedIn() && resource.data.voterId == me();
+    }
+    match /{path=**}/props/{uid} { allow read: if signedIn(); }
+    match /{path=**}/comments/{cid} { allow read: if signedIn(); }
+
+    // One report per user per outfit; Functions react to them.
+    match /reports/{rid} {
+      allow read: if signedIn() && resource.data.reporterId == me();
+      allow create: if signedIn()
+        && request.resource.data.reporterId == me()
+        && request.resource.data.status == 'OPEN'
+        && rid == request.resource.data.outfitId + '_' + me();
+      allow update, delete: if false;
+    }
+  }
+}

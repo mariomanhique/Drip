@@ -37,9 +37,9 @@ import com.mariomanhique.drip.domain.voteBlocker
 class DripRepository(
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     initial: DripState = Seed.state(now()),
-) {
+) : DripStore {
     private val _state = MutableStateFlow(initial)
-    val state: StateFlow<DripState> = _state.asStateFlow()
+    override val state: StateFlow<DripState> = _state.asStateFlow()
 
     private inline fun mutate(block: (DripState) -> Pair<DripState, String?>): String? {
         var error: String? = null
@@ -51,10 +51,10 @@ class DripRepository(
         return error
     }
 
-    fun nowMs(): Long = now()
+    override fun nowMs(): Long = now()
 
     /** Advances battle matching and settlement; call when the app resumes or a screen opens. */
-    fun tick() = _state.update { it.settle(now()) }
+    override fun tick() = _state.update { it.settle(now()) }
 
     private fun DripState.fail(message: String) = this to message
     private fun DripState.ok() = this to null
@@ -63,7 +63,7 @@ class DripRepository(
 
     // --- Accounts -------------------------------------------------------------------------
 
-    fun register(displayName: String, handle: String, password: String, ageConfirmed: Boolean): String? = mutate { s ->
+    override fun register(displayName: String, handle: String, password: String, ageConfirmed: Boolean): String? = mutate { s ->
         val h = handle.trim().lowercase()
         when {
             displayName.isBlank() -> s.fail("Enter your name")
@@ -79,13 +79,13 @@ class DripRepository(
         }
     }
 
-    fun login(handle: String, password: String): String? = mutate { s ->
+    override fun login(handle: String, password: String): String? = mutate { s ->
         val user = s.users.firstOrNull { it.handle == handle.trim().lowercase() && it.password == password }
         if (user == null) s.fail("Wrong handle or password") else s.copy(currentUserId = user.id).ok()
     }
 
     /** Maps a Firebase identity to a local profile, creating one on first sign-in. */
-    fun linkAccount(uid: String, email: String, displayName: String): String? = mutate { s ->
+    override fun linkAccount(uid: String, email: String, displayName: String): String? = mutate { s ->
         if (s.users.any { it.id == uid }) return@mutate s.copy(currentUserId = uid).ok()
         val base = email.substringBefore('@').lowercase().filter { it.isLetterOrDigit() || it == '_' }.ifEmpty { "user" }
         var handle = base
@@ -96,9 +96,9 @@ class DripRepository(
         s.copy(users = s.users + user, currentUserId = uid).ok()
     }
 
-    fun logout() = _state.update { it.copy(currentUserId = null) }
+    override fun logout() = _state.update { it.copy(currentUserId = null) }
 
-    fun updateProfile(displayName: String, bio: String, interests: Set<Category>): String? = mutate { s ->
+    override fun updateProfile(displayName: String, bio: String, interests: Set<Category>): String? = mutate { s ->
         val me = s.currentUser ?: return@mutate s.fail("Not signed in")
         if (displayName.isBlank()) return@mutate s.fail("Name can't be empty")
         s.copy(
@@ -110,14 +110,14 @@ class DripRepository(
 
     // --- Social graph ---------------------------------------------------------------------
 
-    fun toggleFollow(userId: String) = _state.update { s ->
+    override fun toggleFollow(userId: String) = _state.update { s ->
         val me = s.currentUserId ?: return@update s
         if (me == userId || s.isBlocked(userId)) return@update s
         val edge = me to userId
         s.copy(follows = if (edge in s.follows) s.follows - edge else s.follows + edge)
     }
 
-    fun toggleBlock(userId: String) = _state.update { s ->
+    override fun toggleBlock(userId: String) = _state.update { s ->
         val me = s.currentUserId ?: return@update s
         if (me == userId) return@update s
         val edge = me to userId
@@ -127,14 +127,14 @@ class DripRepository(
 
     // --- Outfits --------------------------------------------------------------------------
 
-    fun publish(
+    override fun publish(
         caption: String,
         category: Category,
         palette: List<Long>,
         emoji: String,
         challengeId: String?,
-        constraintOk: Boolean = false,
-        photoUri: String? = null,
+        constraintOk: Boolean,
+        photoUri: String?,
     ): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         if (caption.isBlank()) return@mutate s.fail("Add a caption")
@@ -151,7 +151,7 @@ class DripRepository(
         }
         val outfit = Outfit(
             id = s.id("o"), authorId = me, caption = caption.trim(), category = category,
-            palette = palette, emoji = emoji, photoUri = photoUri, createdAt = s.nextId, challengeId = challengeId,
+            palette = palette, emoji = emoji, photoUri = photoUri, createdAt = now(), challengeId = challengeId,
             constraintConfirmed = challenge != null && challenge.constraint != Constraint.OPEN,
         )
         s.copy(outfits = s.outfits + outfit).bump().ok()
@@ -162,7 +162,7 @@ class DripRepository(
         s.copy(outfits = s.outfits.map { if (it.id == id) transform(it, me) else it })
     }
 
-    fun toggleProps(outfitId: String) = updateOutfit(outfitId) { o, me ->
+    override fun toggleProps(outfitId: String) = updateOutfit(outfitId) { o, me ->
         when {
             o.authorId == me -> o
             me in o.propsFrom -> o.copy(propsFrom = o.propsFrom - me)
@@ -170,11 +170,11 @@ class DripRepository(
         }
     }
 
-    fun toggleSave(outfitId: String) = updateOutfit(outfitId) { o, me ->
+    override fun toggleSave(outfitId: String) = updateOutfit(outfitId) { o, me ->
         o.copy(savedBy = if (me in o.savedBy) o.savedBy - me else o.savedBy + me)
     }
 
-    fun addComment(outfitId: String, text: String) {
+    override fun addComment(outfitId: String, text: String) {
         if (text.isBlank()) return
         _state.update { s ->
             val comment = Comment(s.id("cm"), s.currentUserId ?: return@update s, text.trim(), now())
@@ -187,7 +187,7 @@ class DripRepository(
     // --- Battles --------------------------------------------------------------------------
 
     /** Queues the outfit for a showdown; the system picks the opponent (see RULES.md section 3). */
-    fun startBattle(myOutfitId: String): String? = mutate { s ->
+    override fun startBattle(myOutfitId: String): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         val mine = s.outfit(myOutfitId)
         when {
@@ -206,7 +206,7 @@ class DripRepository(
         }
     }
 
-    fun vote(battleId: String, outfitId: String): String? = mutate { s ->
+    override fun vote(battleId: String, outfitId: String): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         val battle = s.battles.firstOrNull { it.id == battleId } ?: return@mutate s.fail("Battle not found")
         s.voteBlocker(me, battle, now())?.let { return@mutate s.fail(it) }
@@ -219,7 +219,7 @@ class DripRepository(
     }
 
     /** Pairwise challenge pick; [winnerId] is the entry the voter preferred. */
-    fun voteChallenge(challengeId: String, winnerId: String, loserId: String): String? = mutate { s ->
+    override fun voteChallenge(challengeId: String, winnerId: String, loserId: String): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         s.challengeVoteBlocker(me, challengeId, winnerId, loserId, now())?.let { return@mutate s.fail(it) }
         s.copy(
@@ -229,7 +229,7 @@ class DripRepository(
     }
 
     /** Moderator decision on a battle flagged for suspicious voting. */
-    fun resolveBattleReview(battleId: String, valid: Boolean) = _state.update { s ->
+    override fun resolveBattleReview(battleId: String, valid: Boolean) = _state.update { s ->
         val b = s.battles.firstOrNull { it.id == battleId && it.status == BattleStatus.UNDER_REVIEW } ?: return@update s
         if (valid) s.closeBattle(b, now(), skipReview = true)
         else s.copy(battles = s.battles.map { if (it.id == battleId) it.copy(status = BattleStatus.VOID) else it })
@@ -237,7 +237,7 @@ class DripRepository(
 
     // --- Challenges -----------------------------------------------------------------------
 
-    fun closeChallenge(challengeId: String): String? = mutate { s ->
+    override fun closeChallenge(challengeId: String): String? = mutate { s ->
         val challenge = s.challenges.firstOrNull { it.id == challengeId } ?: return@mutate s.fail("Challenge not found")
         if (challenge.closed) return@mutate s.fail("Already closed")
         val standings = s.challengeStandings(challengeId)
@@ -256,7 +256,7 @@ class DripRepository(
 
     // --- Trust & safety -------------------------------------------------------------------
 
-    fun report(targetType: ReportTarget, targetId: String, reason: String): String? = mutate { s ->
+    override fun report(targetType: ReportTarget, targetId: String, reason: String): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         if (reason.isBlank()) return@mutate s.fail("Choose a reason")
         if (s.reports.any { it.reporterId == me && it.targetId == targetId && it.status == ReportStatus.OPEN }) {
@@ -274,7 +274,7 @@ class DripRepository(
     }
 
     /** Moderator decision: action removes the outfit from circulation; dismiss restores it. */
-    fun resolveReport(reportId: String, actioned: Boolean) = _state.update { s ->
+    override fun resolveReport(reportId: String, actioned: Boolean) = _state.update { s ->
         val report = s.reports.firstOrNull { it.id == reportId } ?: return@update s
         val status = if (actioned) ReportStatus.ACTIONED else ReportStatus.DISMISSED
         val sameTarget = s.reports.filter { it.targetId == report.targetId && it.status == ReportStatus.OPEN }.map { it.id }.toSet()

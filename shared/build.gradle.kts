@@ -37,7 +37,11 @@ kotlin {
         }
     }
     sourceSets {
+        iosMain.dependencies {
+            implementation(libs.ktor.darwin)
+        }
         androidMain.dependencies {
+            implementation(libs.ktor.okhttp)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
@@ -45,6 +49,8 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.coil.compose)
+            implementation(libs.coil.network)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.koin.compose)
             implementation(libs.koin.composeViewmodel)
             implementation(libs.compose.runtime)

@@ -16,7 +16,12 @@ fun DripState.challengeStandings(challengeId: String): List<Standing> {
     val votes = validChallengeVotes(challengeId)
     return outfits.filter { it.challengeId == challengeId && !it.hidden }
         .map { o ->
-            Standing(o, votes.count { it.winnerId == o.id }, votes.count { it.winnerId == o.id || it.loserId == o.id })
+            val remote = entryStats[o.id]
+            Standing(
+                o,
+                remote?.first ?: votes.count { it.winnerId == o.id },
+                remote?.second ?: votes.count { it.winnerId == o.id || it.loserId == o.id },
+            )
         }
         .sortedWith(
             compareByDescending<Standing> { it.ranked }

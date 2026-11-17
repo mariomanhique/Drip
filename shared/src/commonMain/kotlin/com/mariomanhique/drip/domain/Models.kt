@@ -26,6 +26,7 @@ data class User(
     val votesCast: Int = 0,
     val showdownsStarted: Int = 0,
     val city: String = Rules.LAUNCH_CITY,
+    val pointsTotal: Int? = null,
 ) {
     /** Drip Score stays hidden until enough rated battles make it meaningful. */
     val dripScore: Int? get() = if (ratedBattles >= Rules.MIN_RATED_BATTLES_FOR_SCORE) rating else null
@@ -33,7 +34,7 @@ data class User(
 
 data class Comment(val id: String, val authorId: String, val text: String, val at: Long = 0)
 
-/** A photo is optional: without one the outfit is rendered from a colour palette + emoji. [photoUri] is a local file URI until cloud storage exists. */
+/** A photo is optional: without one the outfit is rendered from a colour palette + emoji. [photoUri] is a local file URI (offline mode) or a download URL. */
 data class Outfit(
     val id: String,
     val authorId: String,
@@ -41,7 +42,7 @@ data class Outfit(
     val category: Category,
     val palette: List<Long>,
     val emoji: String,
-    val createdAt: Int,
+    val createdAt: Long,
     val challengeId: String? = null,
     val propsFrom: Set<String> = emptySet(),
     val savedBy: Set<String> = emptySet(),
@@ -92,6 +93,8 @@ data class Battle(
     val votes: List<Vote> = emptyList(),
     val winnerOutfitId: String? = null,
     val draw: Boolean = false,
+    val votesA: Int? = null,
+    val votesB: Int? = null,
 ) {
     val closed: Boolean get() = status == BattleStatus.CLOSED
     val active: Boolean get() = status == BattleStatus.WAITING || status == BattleStatus.VOTING || status == BattleStatus.UNDER_REVIEW
@@ -125,6 +128,7 @@ data class DripState(
     val reports: List<Report> = emptyList(),
     val ledger: List<PointEvent> = emptyList(),
     val nextId: Int = 1000,
+    val entryStats: Map<String, Pair<Int, Int>> = emptyMap(),
 ) {
     val currentUser: User? get() = users.firstOrNull { it.id == currentUserId }
 
@@ -140,7 +144,7 @@ data class DripState(
     fun followers(userId: String): Int = follows.count { it.second == userId }
     fun following(userId: String): Int = follows.count { it.first == userId }
 
-    fun points(userId: String): Int = ledger.filter { it.userId == userId }.sumOf { it.points }
+    fun points(userId: String): Int = user(userId)?.pointsTotal ?: ledger.filter { it.userId == userId }.sumOf { it.points }
 
     /** Outfits the current user is allowed to see (not hidden by moderation, not from blocked users). */
     fun visibleOutfits(): List<Outfit> =

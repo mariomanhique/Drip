@@ -46,7 +46,7 @@ object Seed {
         id: String, author: String, caption: String, cat: Category, emoji: String,
         palette: List<Long>, order: Int, challenge: String? = null, props: Int = 0, comments: List<Comment> = emptyList(),
     ) = Outfit(
-        id, author, caption, cat, palette, emoji, order, challenge,
+        id, author, caption, cat, palette, emoji, order.toLong(), challenge,
         propsFrom = (1..props).map { "fan$it" }.toSet(), comments = comments,
     )
 

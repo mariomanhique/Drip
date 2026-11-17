@@ -29,7 +29,7 @@ fun DripState.battleShare(battle: Battle, me: String): ShareContent? {
         battle.winnerOutfitId == mine.id -> "I won a showdown"
         else -> "I took on a showdown"
     }
-    val total = battle.votes.size
+    val total = if (battle.votesA != null && battle.votesB != null) battle.votesA + battle.votesB else battle.votes.size
     val headline = "$result on DRIP"
     return ShareContent(
         headline, mine.caption, mine.emoji, mine.palette,

@@ -8,7 +8,10 @@ import androidx.lifecycle.ViewModel
 import com.mariomanhique.drip.auth.AuthResult
 import com.mariomanhique.drip.auth.AuthService
 import com.mariomanhique.drip.auth.NoAuthService
+import androidx.lifecycle.viewModelScope
 import com.mariomanhique.drip.data.DripRepository
+import com.mariomanhique.drip.data.DripStore
+import kotlinx.coroutines.launch
 import com.mariomanhique.drip.domain.Rules
 import com.mariomanhique.drip.domain.Category
 import com.mariomanhique.drip.domain.ReportTarget
@@ -33,7 +36,7 @@ sealed interface Screen {
 }
 
 class DripViewModel(
-    val repo: DripRepository = DripRepository(),
+    val repo: DripStore = DripRepository(),
     private val auth: AuthService = NoAuthService,
 ) : ViewModel() {
     val state = repo.state
@@ -82,6 +85,10 @@ class DripViewModel(
     val stack = mutableStateListOf<Screen>()
     var message by mutableStateOf<String?>(null)
         private set
+
+    init {
+        viewModelScope.launch { repo.messages.collect { message = it } }
+    }
 
     fun nowMs(): Long = repo.nowMs()
 
