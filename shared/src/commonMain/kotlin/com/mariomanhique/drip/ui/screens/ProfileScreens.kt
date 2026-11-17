@@ -199,19 +199,34 @@ fun CreateOutfitScreen(state: DripState, challengeId: String?, vm: DripViewModel
     var palette by remember { mutableStateOf(palettes.first()) }
     var emoji by remember { mutableStateOf(emojis.first()) }
     val challenge = state.challenges.firstOrNull { it.id == challengeId }
-    val preview = Outfit("preview", "", caption, category, palette, emoji, 0)
+    var photoUri by remember { mutableStateOf<String?>(null) }
+    val picker = com.mariomanhique.drip.ui.LocalPhotoPicker.current
+    val preview = Outfit("preview", "", caption, category, palette, emoji, 0, photoUri = photoUri)
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         challenge?.let { Pill("🏆 Entering: ${it.title}") }
-        OutfitArt(preview, Modifier.fillMaxWidth().height(200.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)))
+        Box(Modifier.fillMaxWidth().height(320.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))) {
+            OutfitArt(preview, Modifier.matchParentSize())
+            if (photoUri != null) {
+                Box(Modifier.fillMaxWidth().height(70.dp).background(Color.Black.copy(alpha = 0.45f)), Alignment.Center) {
+                    Text("Face zone: crop it out", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button({ picker.pick { if (it != null) photoUri = it } }, Modifier.weight(1f)) {
+                Text(if (photoUri == null) "Choose from gallery" else "Change photo")
+            }
+            if (photoUri != null) androidx.compose.material3.OutlinedButton({ photoUri = null }) { Text("Remove") }
+        }
         Text(
-            "Photo upload is coming soon — compose your look with a colour mood and a hero piece for now.",
+            "Neck-down photos only (RULES.md): keep faces out of frame, no beauty filters. Without a photo your look uses a colour mood and hero piece.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         OutlinedTextField(caption, { caption = it }, Modifier.fillMaxWidth(), label = { Text("Caption") })
         SectionTitle("Category")
         CategoryChips(category, { it?.let { c -> category = c } }, allowAll = false)
-        SectionTitle("Colour mood")
+        if (photoUri == null) SectionTitle("Colour mood")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             palettes.forEach { p ->
                 Box(
@@ -232,7 +247,7 @@ fun CreateOutfitScreen(state: DripState, challengeId: String?, vm: DripViewModel
                 Text("${challenge!!.constraint.label}: ${challenge.constraint.pledge}", style = MaterialTheme.typography.bodyMedium)
             }
         }
-        Button({ vm.publish(caption, category, palette, emoji, challengeId, pledgeOk) }, Modifier.fillMaxWidth(), enabled = caption.isNotBlank() && (!pledged || pledgeOk)) {
+        Button({ vm.publish(caption, category, palette, emoji, challengeId, pledgeOk, photoUri) }, Modifier.fillMaxWidth(), enabled = caption.isNotBlank() && (!pledged || pledgeOk)) {
             Text("DROP IT 🔥")
         }
     }

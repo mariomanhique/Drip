@@ -154,3 +154,10 @@ Faces and bodies attract votes unrelated to the outfit. To reduce this:
 - [ ] Lawyer review: privacy policy, terms of service, minors, content licence.
 - [ ] Decide skill-matching thresholds (Drip Score range) once there are enough users.
 - [ ] Mozambique phase: legal and data-protection review before expansion.
+
+## 12. Outfit photos
+
+- Photos are picked from the gallery (no camera access, no photo-library permission needed).
+- Neck-down only: the app shows a face-zone guide and crops outfit images bottom-aligned, trimming the top of the frame. No beauty filters.
+- Photos stay on the device until cloud storage (Firebase) is added. The share card uses the photo when present.
+- Open: server-side face detection and moderation before a photo goes public.

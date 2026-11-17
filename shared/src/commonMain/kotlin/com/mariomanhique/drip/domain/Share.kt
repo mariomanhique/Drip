@@ -16,6 +16,7 @@ data class ShareContent(
     val emoji: String,
     val palette: List<Long>,
     val text: String,
+    val photoUri: String? = null,
 )
 
 /** Sharing opens only once a result is final (RULES.md section 4); outfits stay anonymous until then. */
@@ -33,6 +34,7 @@ fun DripState.battleShare(battle: Battle, me: String): ShareContent? {
     return ShareContent(
         headline, mine.caption, mine.emoji, mine.palette,
         "$headline — $total anonymous votes decided it. Think you can beat me? ${Rules.APP_LINK}",
+        mine.photoUri
     )
 }
 
@@ -47,5 +49,6 @@ fun DripState.challengeShare(challengeId: String, me: String): ShareContent? {
     return ShareContent(
         headline, st.outfit.caption, st.outfit.emoji, st.outfit.palette,
         "$headline. Ranked by anonymous votes, never by followers. ${Rules.APP_LINK}",
+        st.outfit.photoUri
     )
 }

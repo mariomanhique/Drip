@@ -25,10 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.mariomanhique.drip.domain.Badge
 import com.mariomanhique.drip.domain.Category
 import com.mariomanhique.drip.domain.Outfit
@@ -71,7 +73,13 @@ fun OutfitArt(outfit: Outfit, modifier: Modifier = Modifier, emojiSize: Int = 72
         modifier.background(Brush.verticalGradient(if (colors.size == 1) colors + colors else colors)),
         contentAlignment = Alignment.Center,
     ) {
-        Text(outfit.emoji, fontSize = emojiSize.sp)
+        if (outfit.photoUri != null) {
+            // Bottom-aligned crop keeps the outfit and trims the top of the frame, where faces usually are.
+            AsyncImage(
+                model = outfit.photoUri, contentDescription = outfit.caption,
+                modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter,
+            )
+        } else Text(outfit.emoji, fontSize = emojiSize.sp)
         if (outfit.hidden) {
             Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.7f)), Alignment.Center) {
                 Text("Hidden pending review", color = Color.White)

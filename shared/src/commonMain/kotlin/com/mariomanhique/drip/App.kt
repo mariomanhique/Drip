@@ -17,7 +17,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
+import com.mariomanhique.drip.ui.LocalPhotoPicker
 import com.mariomanhique.drip.ui.LocalSharer
+import com.mariomanhique.drip.ui.PhotoPicker
 import com.mariomanhique.drip.ui.Sharer
 import com.mariomanhique.drip.ui.DripHeader
 import com.mariomanhique.drip.ui.DripTheme
@@ -41,8 +43,8 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(sharer: Sharer = Sharer { _, _ -> false }) {
-    CompositionLocalProvider(LocalSharer provides sharer) { AppContent() }
+fun App(sharer: Sharer = Sharer { _, _ -> false }, photoPicker: PhotoPicker = PhotoPicker { it(null) }) {
+    CompositionLocalProvider(LocalSharer provides sharer, LocalPhotoPicker provides photoPicker) { AppContent() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

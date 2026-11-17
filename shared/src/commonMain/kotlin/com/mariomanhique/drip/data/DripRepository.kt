@@ -122,6 +122,7 @@ class DripRepository(
         emoji: String,
         challengeId: String?,
         constraintOk: Boolean = false,
+        photoUri: String? = null,
     ): String? = mutate { s ->
         val me = s.currentUserId ?: return@mutate s.fail("Not signed in")
         if (caption.isBlank()) return@mutate s.fail("Add a caption")
@@ -138,7 +139,7 @@ class DripRepository(
         }
         val outfit = Outfit(
             id = s.id("o"), authorId = me, caption = caption.trim(), category = category,
-            palette = palette, emoji = emoji, createdAt = s.nextId, challengeId = challengeId,
+            palette = palette, emoji = emoji, photoUri = photoUri, createdAt = s.nextId, challengeId = challengeId,
             constraintConfirmed = challenge != null && challenge.constraint != Constraint.OPEN,
         )
         s.copy(outfits = s.outfits + outfit).bump().ok()

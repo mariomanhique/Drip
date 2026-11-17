@@ -1,6 +1,7 @@
 package com.mariomanhique.drip
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import com.mariomanhique.drip.domain.ShareContent
 import com.mariomanhique.drip.domain.ShareTarget
 import com.mariomanhique.drip.ui.Sharer
@@ -99,7 +100,19 @@ private fun renderCard(content: ShareContent): UIImage? {
         )
         (s as NSString).drawInRect(CGRectMake(80.0, y, CARD_W - 160.0, h), withAttributes = attrs)
     }
-    text(content.emoji, 260.0, 380.0, 340.0)
+    val photo = content.photoUri?.let { NSURL.URLWithString(it)?.path }?.let { UIImage.imageWithContentsOfFile(it) }
+    if (photo != null) {
+        val pw = photo.size.useContents { width }
+        val ph = photo.size.useContents { height }
+        val scale = maxOf(CARD_W / pw, CARD_H / ph)
+        val dw = pw * scale
+        val dh = ph * scale
+        photo.drawInRect(CGRectMake((CARD_W - dw) / 2, CARD_H - dh, dw, dh))
+        UIColor.blackColor.colorWithAlphaComponent(0.55).setFill()
+        UIRectFill(CGRectMake(0.0, 1100.0, CARD_W, CARD_H - 1100.0))
+    } else {
+        text(content.emoji, 260.0, 380.0, 340.0)
+    }
     text(content.headline, 84.0, 760.0, 300.0)
     text(content.caption, 52.0, 1100.0, 360.0, bold = false)
     text("DRIP", 64.0, 1700.0, 100.0)

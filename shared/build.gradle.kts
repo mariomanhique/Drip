@@ -44,6 +44,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
+            implementation(libs.coil.compose)
             implementation(libs.koin.compose)
             implementation(libs.koin.composeViewmodel)
             implementation(libs.compose.runtime)

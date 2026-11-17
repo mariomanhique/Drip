@@ -84,8 +84,8 @@ class DripViewModel(val repo: DripRepository = DripRepository()) : ViewModel() {
         if (notify(repo.updateProfile(name, bio, interests), "Profile saved")) back()
     }
 
-    fun publish(caption: String, category: Category, palette: List<Long>, emoji: String, challengeId: String?, constraintOk: Boolean = false) {
-        if (notify(repo.publish(caption, category, palette, emoji, challengeId, constraintOk), "Fit dropped 🔥")) back()
+    fun publish(caption: String, category: Category, palette: List<Long>, emoji: String, challengeId: String?, constraintOk: Boolean = false, photoUri: String? = null) {
+        if (notify(repo.publish(caption, category, palette, emoji, challengeId, constraintOk, photoUri), "Fit dropped 🔥")) back()
     }
 
     fun startBattle(mine: String) =

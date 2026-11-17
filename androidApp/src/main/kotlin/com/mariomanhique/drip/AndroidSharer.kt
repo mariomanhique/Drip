@@ -95,8 +95,19 @@ class AndroidSharer(private val context: Context) : Sharer {
         canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
         paint.shader = null
         paint.textAlign = Paint.Align.CENTER
-        paint.textSize = 420f
-        canvas.drawText(c.emoji, w / 2f, 860f, paint)
+        val photo = c.photoUri?.let { runCatching { android.graphics.BitmapFactory.decodeFile(android.net.Uri.parse(it).path) }.getOrNull() }
+        if (photo != null) {
+            val scale = maxOf(w / photo.width.toFloat(), h / photo.height.toFloat())
+            val dw = photo.width * scale
+            val dh = photo.height * scale
+            canvas.drawBitmap(photo, null, android.graphics.RectF((w - dw) / 2f, h - dh, (w + dw) / 2f, h.toFloat()), paint)
+            paint.shader = LinearGradient(0f, 1100f, 0f, h.toFloat(), Color.TRANSPARENT, Color.argb(210, 0, 0, 0), Shader.TileMode.CLAMP)
+            canvas.drawRect(0f, 1100f, w.toFloat(), h.toFloat(), paint)
+            paint.shader = null
+        } else {
+            paint.textSize = 420f
+            canvas.drawText(c.emoji, w / 2f, 860f, paint)
+        }
         paint.color = Color.WHITE
         paint.setShadowLayer(8f, 0f, 2f, Color.argb(160, 0, 0, 0))
         paint.typeface = Typeface.DEFAULT_BOLD

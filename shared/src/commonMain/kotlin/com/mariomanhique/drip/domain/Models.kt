@@ -33,7 +33,7 @@ data class User(
 
 data class Comment(val id: String, val authorId: String, val text: String, val at: Long = 0)
 
-/** Photo upload needs a platform picker; until then an outfit is rendered from a colour palette + emoji. */
+/** A photo is optional: without one the outfit is rendered from a colour palette + emoji. [photoUri] is a local file URI until cloud storage exists. */
 data class Outfit(
     val id: String,
     val authorId: String,
@@ -48,6 +48,7 @@ data class Outfit(
     val comments: List<Comment> = emptyList(),
     val hidden: Boolean = false,
     val constraintConfirmed: Boolean = false,
+    val photoUri: String? = null,
 ) {
     val props: Int get() = propsFrom.size
 }
