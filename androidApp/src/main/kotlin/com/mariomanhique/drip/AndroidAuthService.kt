@@ -70,6 +70,11 @@ class AndroidAuthService(private val appContext: Context) : AuthService {
     override fun signIn(email: String, password: String, onResult: (AuthResult) -> Unit) =
         run(onResult) { auth.signInWithEmailAndPassword(email, password).await().user }
 
+    override fun supportsApple() = false
+
+    override fun signInWithApple(onResult: (AuthResult) -> Unit) =
+        onResult(AuthResult(null, "Apple sign-in is only available on iOS"))
+
     override fun signInWithGoogle(onResult: (AuthResult) -> Unit) = run(onResult) {
         val host = activity.get() ?: error("Screen not ready, try again")
         val option = GetGoogleIdOption.Builder()

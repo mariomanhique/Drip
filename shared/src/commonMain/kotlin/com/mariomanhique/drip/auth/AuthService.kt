@@ -14,6 +14,8 @@ interface AuthService {
     fun signUp(email: String, password: String, displayName: String, onResult: (AuthResult) -> Unit)
     fun signIn(email: String, password: String, onResult: (AuthResult) -> Unit)
     fun signInWithGoogle(onResult: (AuthResult) -> Unit)
+    fun supportsApple(): Boolean
+    fun signInWithApple(onResult: (AuthResult) -> Unit)
     fun signOut()
 }
 
@@ -25,5 +27,7 @@ object NoAuthService : AuthService {
     override fun signIn(email: String, password: String, onResult: (AuthResult) -> Unit) =
         onResult(AuthResult(null, "Sign-in unavailable"))
     override fun signInWithGoogle(onResult: (AuthResult) -> Unit) = onResult(AuthResult(null, "Sign-in unavailable"))
+    override fun supportsApple() = false
+    override fun signInWithApple(onResult: (AuthResult) -> Unit) = onResult(AuthResult(null, "Sign-in unavailable"))
     override fun signOut() {}
 }

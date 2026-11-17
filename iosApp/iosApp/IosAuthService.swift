@@ -3,8 +3,71 @@ import Shared
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
+import AuthenticationServices
+import CryptoKit
 
-final class IosAuthService: AuthService {
+final class IosAuthService: NSObject, AuthService, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+
+    private var appleNonce: String?
+    private var appleCallback: ((AuthResult) -> Void)?
+
+    func supportsApple() -> Bool { true }
+
+    func signInWithApple(onResult: @escaping (AuthResult) -> Void) {
+        let nonce = Self.randomNonce()
+        appleNonce = nonce
+        appleCallback = onResult
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = Self.sha256(nonce)
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        Self.topViewController()?.view.window ?? ASPresentationAnchor()
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        let callback = appleCallback
+        let nonce = appleNonce
+        appleCallback = nil
+        appleNonce = nil
+        guard let apple = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let nonce,
+              let tokenData = apple.identityToken,
+              let idToken = String(data: tokenData, encoding: .utf8) else {
+            callback?(AuthResult(user: nil, error: "Apple sign-in failed"))
+            return
+        }
+        let credential = OAuthProvider.appleCredential(withIDToken: idToken, rawNonce: nonce, fullName: apple.fullName)
+        Auth.auth().signIn(with: credential) { result, error in
+            if let user = result?.user {
+                callback?(AuthResult(user: Self.map(user), error: nil))
+            } else {
+                callback?(AuthResult(user: nil, error: Self.message(error)))
+            }
+        }
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let callback = appleCallback
+        appleCallback = nil
+        appleNonce = nil
+        let cancelled = (error as? ASAuthorizationError)?.code == .canceled
+        callback?(AuthResult(user: nil, error: cancelled ? "Sign-in cancelled" : "Apple sign-in failed"))
+    }
+
+    private static func randomNonce(length: Int = 32) -> String {
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        return String((0..<length).map { _ in charset[Int.random(in: 0..<charset.count)] })
+    }
+
+    private static func sha256(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
 
     func currentUser() -> AuthUser? {
         guard let user = Auth.auth().currentUser else { return nil }

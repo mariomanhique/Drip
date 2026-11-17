@@ -88,6 +88,13 @@ fun AuthScreen(vm: DripViewModel) {
             onClick = { vm.consumeMessage(); vm.signInGoogle(registering, ageOk) },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Continue with Google") }
+        if (vm.appleSupported) {
+            OutlinedButton(
+                enabled = !busy,
+                onClick = { vm.consumeMessage(); vm.signInApple(registering, ageOk) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Continue with Apple") }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(if (registering) "Have an account?" else "New to Drip?")
             TextButton({ registering = !registering }) { Text(if (registering) "Sign in" else "Register") }

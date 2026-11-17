@@ -80,6 +80,14 @@ class DripViewModel(
         auth.signInWithGoogle(::onAuth)
     }
 
+    val appleSupported get() = auth.supportsApple()
+
+    fun signInApple(registering: Boolean, ageConfirmed: Boolean) {
+        if (registering && !ageConfirmed) { message = "You must be ${Rules.MIN_AGE} or older to use Drip"; return }
+        authBusy = true
+        auth.signInWithApple(::onAuth)
+    }
+
     var tab by mutableStateOf(Tab.FEED)
         private set
     val stack = mutableStateListOf<Screen>()
