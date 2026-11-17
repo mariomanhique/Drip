@@ -1,6 +1,13 @@
 package com.mariomanhique.drip
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
@@ -44,7 +51,9 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(sharer: Sharer = Sharer { _, _ -> false }, photoPicker: PhotoPicker = PhotoPicker { it(null) }) {
-    CompositionLocalProvider(LocalSharer provides sharer, LocalPhotoPicker provides photoPicker) { AppContent() }
+    CompositionLocalProvider(LocalSharer provides sharer, LocalPhotoPicker provides photoPicker) {
+        Box(Modifier.dismissKeyboardOnOutsideInteraction()) { AppContent() }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,7 +76,7 @@ private fun AppContent() {
         }
         val screen = vm.stack.lastOrNull()
         Scaffold(
-           // topBar = { DripHeader(state, vm, showBack = screen != null) },
+            // topBar = { DripHeader(state, vm, showBack = screen != null) },
             bottomBar = {
                 NavigationBar {
                     Tab.entries.forEach {
@@ -107,3 +116,20 @@ private fun AppContent() {
 
 @Composable
 private fun AuthHost(vm: DripViewModel) = AuthScreen(vm)
+
+/** Taps on empty space and scrolling both close the keyboard. */
+@Composable
+private fun Modifier.dismissKeyboardOnOutsideInteraction(): Modifier {
+    val focus = LocalFocusManager.current
+    val connection = remember(focus) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                focus.clearFocus()
+                return Offset.Zero
+            }
+        }
+    }
+    return this
+        .nestedScroll(connection)
+        .pointerInput(focus) { detectTapGestures { focus.clearFocus() } }
+}

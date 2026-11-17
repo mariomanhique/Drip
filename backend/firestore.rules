@@ -109,6 +109,7 @@ service cloud.firestore {
     }
     match /{path=**}/props/{uid} { allow read: if signedIn(); }
     match /{path=**}/comments/{cid} { allow read: if signedIn(); }
+    match /{path=**}/entryStats/{oid} { allow read: if signedIn(); }
 
     // One report per user per outfit; Functions react to them.
     match /reports/{rid} {
