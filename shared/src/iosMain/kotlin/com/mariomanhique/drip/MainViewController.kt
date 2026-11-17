@@ -1,9 +1,8 @@
 package com.mariomanhique.drip
 
 import androidx.compose.ui.window.ComposeUIViewController
-/**
- * WhatsApp (chat and status) opens directly when installed. Facebook, Instagram and
- * "more" use the system share sheet, which lists those apps when they are installed.
- */
+import com.mariomanhique.drip.di.initKoin
 
-fun MainViewController() = ComposeUIViewController { App(sharer = IosSharer) }
+private val koin by lazy { initKoin() }
+
+fun MainViewController() = ComposeUIViewController(configure = { koin }) { App(sharer = IosSharer) }

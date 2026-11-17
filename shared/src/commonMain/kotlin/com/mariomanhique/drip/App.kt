@@ -37,6 +37,7 @@ import com.mariomanhique.drip.ui.screens.ProfileScreen
 import com.mariomanhique.drip.ui.screens.RanksScreen
 import com.mariomanhique.drip.ui.screens.RulesScreen
 import com.mariomanhique.drip.ui.screens.SettingsScreen
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +49,7 @@ fun App(sharer: Sharer = Sharer { _, _ -> false }) {
 @Composable
 private fun AppContent() {
     DripTheme {
-        val vm = viewModel { DripViewModel() }
+        val vm = koinViewModel<DripViewModel>()
         val state by vm.state.collectAsStateWithLifecycle()
         if (state.currentUserId == null) {
             AuthHost(vm)
