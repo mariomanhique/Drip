@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "399931368266",
+    "project_id": "drip-ae9a5",
+    "storage_bucket": "drip-ae9a5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:399931368266:android:3a6283a34365bd9b3717b3",
+        "android_client_info": {
+          "package_name": "com.mariomanhique.drip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "399931368266-8ojldt678ul9br5g3ijahbjve67vfc1i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mariomanhique.drip",
+            "certificate_hash": "642d117276a0d97d7ad5fc5586ee3023a3ba76e6"
+          }
+        },
+        {
+          "client_id": "399931368266-6c8ug1ud15vkt4i554u2f0e4m3kidsd7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCjeixmkaqnEQgZ090rHR6dHww7o9JKQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "399931368266-6c8ug1ud15vkt4i554u2f0e4m3kidsd7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "399931368266-93u7lukehk5p9metb2hm54nlrus0v7n0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mariomanhique.drip"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

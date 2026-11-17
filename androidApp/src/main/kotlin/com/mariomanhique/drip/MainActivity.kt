@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.mariomanhique.drip.di.appModules
+import org.koin.android.ext.android.get
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinConfiguration
 
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        get<AndroidAuthService>().attach(this)
 
         setContent {
             App(
@@ -51,7 +53,8 @@ class MainActivity : ComponentActivity() {
 fun AppAndroidPreview() {
     org.koin.compose.KoinApplication(configuration = koinConfiguration(declaration = {
         modules(
-            appModules
+            org.koin.dsl.module { single<com.mariomanhique.drip.auth.AuthService> { com.mariomanhique.drip.auth.NoAuthService } },
+            *appModules.toTypedArray(),
         )
     }), content = { App() })
 }

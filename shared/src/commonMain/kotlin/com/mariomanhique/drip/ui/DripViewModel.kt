@@ -5,7 +5,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.mariomanhique.drip.auth.AuthResult
+import com.mariomanhique.drip.auth.AuthService
+import com.mariomanhique.drip.auth.NoAuthService
 import com.mariomanhique.drip.data.DripRepository
+import com.mariomanhique.drip.domain.Rules
 import com.mariomanhique.drip.domain.Category
 import com.mariomanhique.drip.domain.ReportTarget
 
@@ -28,8 +32,50 @@ sealed interface Screen {
     data object Rules : Screen
 }
 
-class DripViewModel(val repo: DripRepository = DripRepository()) : ViewModel() {
+class DripViewModel(
+    val repo: DripRepository = DripRepository(),
+    private val auth: AuthService = NoAuthService,
+) : ViewModel() {
     val state = repo.state
+
+    var authBusy by mutableStateOf(false)
+        private set
+
+    init {
+        auth.currentUser()?.let { repo.linkAccount(it.uid, it.email, it.displayName) }
+    }
+
+    private fun onAuth(result: AuthResult) {
+        authBusy = false
+        val user = result.user
+        if (user == null) {
+            message = result.error ?: "Sign-in failed"
+        } else {
+            notify(repo.linkAccount(user.uid, user.email, user.displayName))
+        }
+    }
+
+    fun signUpEmail(name: String, email: String, password: String, ageConfirmed: Boolean) {
+        val error = when {
+            name.isBlank() -> "Enter your name"
+            !ageConfirmed -> "You must be ${Rules.MIN_AGE} or older to use Drip"
+            else -> null
+        }
+        if (error != null) { message = error; return }
+        authBusy = true
+        auth.signUp(email.trim(), password, name.trim(), ::onAuth)
+    }
+
+    fun signInEmail(email: String, password: String) {
+        authBusy = true
+        auth.signIn(email.trim(), password, ::onAuth)
+    }
+
+    fun signInGoogle(registering: Boolean, ageConfirmed: Boolean) {
+        if (registering && !ageConfirmed) { message = "You must be ${Rules.MIN_AGE} or older to use Drip"; return }
+        authBusy = true
+        auth.signInWithGoogle(::onAuth)
+    }
 
     var tab by mutableStateOf(Tab.FEED)
         private set
@@ -75,6 +121,7 @@ class DripViewModel(val repo: DripRepository = DripRepository()) : ViewModel() {
     fun login(handle: String, password: String) = notify(repo.login(handle, password))
 
     fun logout() {
+        auth.signOut()
         repo.logout()
         stack.clear()
         tab = Tab.FEED

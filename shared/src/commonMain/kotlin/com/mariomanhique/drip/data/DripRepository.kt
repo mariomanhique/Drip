@@ -84,6 +84,18 @@ class DripRepository(
         if (user == null) s.fail("Wrong handle or password") else s.copy(currentUserId = user.id).ok()
     }
 
+    /** Maps a Firebase identity to a local profile, creating one on first sign-in. */
+    fun linkAccount(uid: String, email: String, displayName: String): String? = mutate { s ->
+        if (s.users.any { it.id == uid }) return@mutate s.copy(currentUserId = uid).ok()
+        val base = email.substringBefore('@').lowercase().filter { it.isLetterOrDigit() || it == '_' }.ifEmpty { "user" }
+        var handle = base
+        var n = 1
+        while (s.users.any { it.handle == handle }) handle = base + n++
+        val name = displayName.ifBlank { base }
+        val user = User(uid, handle, name, joinedOrder = s.users.size + 1, joinedAt = now())
+        s.copy(users = s.users + user, currentUserId = uid).ok()
+    }
+
     fun logout() = _state.update { it.copy(currentUserId = null) }
 
     fun updateProfile(displayName: String, bio: String, interests: Set<Category>): String? = mutate { s ->
