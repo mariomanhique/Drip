@@ -39,13 +39,14 @@ import com.mariomanhique.drip.ui.DripLime
 import com.mariomanhique.drip.ui.DripViewModel
 import com.mariomanhique.drip.ui.EmptyState
 import com.mariomanhique.drip.ui.OutfitArt
+import com.mariomanhique.drip.ui.PhotoViewer
 import com.mariomanhique.drip.ui.Pill
 import com.mariomanhique.drip.ui.Screen
 import com.mariomanhique.drip.ui.SectionTitle
 
 @Composable
 fun ChallengesScreen(state: DripState, vm: DripViewModel) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(contentPadding = com.mariomanhique.drip.ui.bottomBarListPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items(state.challenges.sortedBy { it.closed }, key = { it.id }) { c ->
             Card(
                 Modifier.fillMaxWidth().clickable { vm.open(Screen.ChallengeDetail(c.id)) },
@@ -76,7 +77,7 @@ fun ChallengeDetailScreen(state: DripState, challengeId: String, vm: DripViewMod
     val me = state.currentUserId
     val pair = if (me != null && !c.closed) state.nextChallengePair(me, c.id, vm.nowMs()) else null
     val entered = ranked.any { it.authorId == state.currentUserId }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(contentPadding = com.mariomanhique.drip.ui.bottomBarListPadding(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(c.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -98,7 +99,9 @@ fun ChallengeDetailScreen(state: DripState, challengeId: String, vm: DripViewMod
                         listOf("Look A" to pair.first, "Look B" to pair.second).forEach { (label, o) ->
                             val other = if (o == pair.first) pair.second else pair.first
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                OutfitArt(o, Modifier.height(160.dp).fillMaxWidth(), 56)
+                                var viewing by remember { mutableStateOf(false) }
+                                if (viewing) PhotoViewer(o) { viewing = false }
+                                OutfitArt(o, Modifier.height(160.dp).fillMaxWidth().clickable { viewing = true }, 56)
                                 Button({ vm.voteChallenge(c.id, o.id, other.id) }, Modifier.fillMaxWidth()) { Text(label) }
                             }
                         }
@@ -144,7 +147,7 @@ fun RanksScreen(state: DripState, vm: DripViewModel) {
             else -> true
         }
     }.sortedByDescending { state.points(it.id) }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(contentPadding = com.mariomanhique.drip.ui.bottomBarListPadding(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -172,7 +175,7 @@ fun RanksScreen(state: DripState, vm: DripViewModel) {
                     Text(u.displayName + if (u.id == me) " (you)" else "", fontWeight = FontWeight.SemiBold)
                     Text("Drip Score ${stats.dripScore ?: "–"} · ${stats.battleWins}W-${stats.battleLosses}L", style = MaterialTheme.typography.bodySmall)
                 }
-                Text("${stats.points} pts", color = DripLime, fontWeight = FontWeight.Bold)
+                Text("${stats.points} pts", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
         }
     }

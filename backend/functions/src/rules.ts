@@ -10,7 +10,6 @@ export const R = {
   MAX_WAIT_FOR_MATCH: 72 * HOUR,
   QUORUM: 20,
   MIN_VOTER_ACCOUNT_AGE: DAY,
-  VOTES_PER_SHOWDOWN: 10,
   REMATCH_COOLDOWN: 14 * DAY,
   INTERACTION_WINDOW: 30 * DAY,
   DRAW_MARGIN: 2,
@@ -32,10 +31,6 @@ export const R = {
 };
 
 export type Vote = { voterId: string; outfitId: string; at: number };
-
-export function votesNeeded(showdownsStarted: number, votesCast: number): number {
-  return Math.max(0, R.VOTES_PER_SHOWDOWN * (showdownsStarted + 1) - votesCast);
-}
 
 export interface VoteCheck {
   userId: string;

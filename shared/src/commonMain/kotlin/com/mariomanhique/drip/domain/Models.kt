@@ -23,6 +23,8 @@ data class User(
     val rating: Int = Rules.START_RATING,
     val ratedBattles: Int = 0,
     val flagged: Boolean = false,
+    val followerCount: Int? = null,
+    val followingCount: Int? = null,
     val votesCast: Int = 0,
     val showdownsStarted: Int = 0,
     val city: String = Rules.LAUNCH_CITY,
@@ -141,8 +143,8 @@ data class DripState(
     fun isFollowing(userId: String): Boolean =
         currentUserId != null && (currentUserId to userId) in follows
 
-    fun followers(userId: String): Int = follows.count { it.second == userId }
-    fun following(userId: String): Int = follows.count { it.first == userId }
+    fun followers(userId: String): Int = user(userId)?.followerCount ?: follows.count { it.second == userId }
+    fun following(userId: String): Int = user(userId)?.followingCount ?: follows.count { it.first == userId }
 
     fun points(userId: String): Int = user(userId)?.pointsTotal ?: ledger.filter { it.userId == userId }.sumOf { it.points }
 
@@ -167,7 +169,6 @@ object Rules {
     const val MAX_WAIT_FOR_MATCH_MS = 72 * HOUR_MS
     const val QUORUM = 20
     const val MIN_VOTER_ACCOUNT_AGE_MS = DAY_MS
-    const val VOTES_PER_SHOWDOWN = 10
     const val REMATCH_COOLDOWN_MS = 14 * DAY_MS
     const val INTERACTION_WINDOW_MS = 30 * DAY_MS
     const val DRAW_MARGIN_VOTES = 2

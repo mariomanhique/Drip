@@ -14,7 +14,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.mariomanhique.drip.ui.PhotoViewer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mariomanhique.drip.domain.Battle
@@ -41,7 +47,7 @@ fun BattlesScreen(state: DripState, vm: com.mariomanhique.drip.ui.DripViewModel)
     val toVote = state.votableBattles(me, now)
     val mine = state.battles.filter { me in state.participantsOf(it) || (it.status == BattleStatus.WAITING && it.creatorId == me) }
         .reversed()
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(contentPadding = com.mariomanhique.drip.ui.bottomBarListPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text(
                 "Pick the harder fit. Votes are anonymous and results stay hidden until the showdown closes.",
@@ -72,8 +78,10 @@ private fun VoteCard(state: DripState, battle: Battle, vm: com.mariomanhique.dri
 
 @Composable
 private fun Side(label: String, outfit: Outfit, modifier: Modifier, onVote: () -> Unit) {
+    var viewing by remember { mutableStateOf(false) }
+    if (viewing) PhotoViewer(outfit) { viewing = false }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        OutfitArt(outfit, Modifier.fillMaxWidth().height(180.dp), 56)
+        OutfitArt(outfit, Modifier.fillMaxWidth().height(180.dp).clickable { viewing = true }, 56)
         Text(outfit.caption, maxLines = 2, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onVote, Modifier.fillMaxWidth()) { Text("Vote $label") }
     }

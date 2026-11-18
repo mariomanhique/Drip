@@ -27,7 +27,7 @@ Not legal advice: have the policy sections reviewed by a lawyer before public la
 | Loss | +2 (participation) |
 | Void battle | 0 |
 
-**Vote to play:** a user must have cast 10 votes (showdown or challenge) per showdown they start (first showdown needs 10, the next 20 cumulative, and so on). Votes themselves earn no points.
+**Voting is optional:** nothing is unlocked by voting, so votes stay honest. Votes earn no points and nothing depends on how you voted.
 
 Daily cap: 100 points per user. Showdown cap: at most 3 showdowns per user per 24 hours (stops points farming).
 

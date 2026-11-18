@@ -64,9 +64,6 @@ test("elo and points cap", () => {
   assert.equal(r.grantedPoints(10, 95), 5);
   assert.equal(r.grantedPoints(10, 100), 0);
   assert.equal(r.grantedPoints(0, 0), 0);
-  assert.equal(r.votesNeeded(0, 0), 10);
-  assert.equal(r.votesNeeded(1, 15), 5);
-  assert.equal(r.votesNeeded(0, 99), 0);
 });
 
 test("standings rank only after quorum appearances", () => {

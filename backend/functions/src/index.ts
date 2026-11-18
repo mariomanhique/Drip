@@ -2,7 +2,7 @@ import { initializeApp } from "firebase-admin/app";
 import { FieldValue, Firestore, getFirestore, Transaction } from "firebase-admin/firestore";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as rules from "./rules";
 import { R, DAY } from "./rules";
 
@@ -23,8 +23,8 @@ const requireModerator = (req: CallableRequest) => {
   if (!req.auth?.token.moderator) throw new HttpsError("permission-denied", "Moderators only");
 };
 
-type Stats = { rating: number; ratedBattles: number; flagged: boolean; votesCast: number; showdownsStarted: number; points: number };
-const defaultStats = (): Stats => ({ rating: R.START_RATING, ratedBattles: 0, flagged: false, votesCast: 0, showdownsStarted: 0, points: 0 });
+type Stats = { rating: number; ratedBattles: number; flagged: boolean; votesCast: number; showdownsStarted: number; points: number; followerCount: number; followingCount: number };
+const defaultStats = (): Stats => ({ rating: R.START_RATING, ratedBattles: 0, flagged: false, votesCast: 0, showdownsStarted: 0, points: 0, followerCount: 0, followingCount: 0 });
 
 async function related(a: string, b: string, tx?: Transaction): Promise<boolean> {
   const refs = [`follows/${a}_${b}`, `follows/${b}_${a}`, `blocks/${a}_${b}`, `blocks/${b}_${a}`].map((p) => db.doc(p));
@@ -98,8 +98,6 @@ export const startBattle = onCall(opts, async (req) => {
     ]);
     if (existing.exists) throw new HttpsError("already-exists", "This outfit already had a showdown");
     const s = { ...defaultStats(), ...(stats.data() ?? {}) } as Stats;
-    const needed = rules.votesNeeded(s.showdownsStarted, s.votesCast);
-    if (needed > 0) throw new HttpsError("failed-precondition", `Vote on ${needed} more showdowns first`);
     if (recent.size >= R.MAX_BATTLES_PER_DAY) throw new HttpsError("resource-exhausted", "Daily showdown limit reached");
     tx.set(battleRef, {
       creatorId: uid, outfitAId: outfitId, outfitBId: null, participants: [uid],
@@ -319,4 +317,17 @@ export const onReportCreated = onDocumentCreated({ document: "reports/{id}", reg
   const open = await db.collection("reports").where("outfitId", "==", outfitId).where("status", "==", "OPEN").get();
   const reporters = new Set(open.docs.map((d) => d.get("reporterId")));
   if (reporters.size >= R.REPORTS_TO_AUTO_HIDE) await db.doc(`outfits/${outfitId}`).update({ hidden: true });
+});
+
+/* ---------- Follow counters (kept on userStats so follow edges stay private) ---------- */
+export const onFollowWritten = onDocumentWritten({ document: "follows/{pair}", region: REGION }, async (event) => {
+  const before = event.data?.before.data();
+  const after = event.data?.after.data();
+  if (!!before === !!after) return;
+  const d = after ?? before!;
+  const delta = after ? 1 : -1;
+  const batch = db.batch();
+  batch.set(db.doc(`userStats/${d.followerId}`), { followingCount: FieldValue.increment(delta) }, { merge: true });
+  batch.set(db.doc(`userStats/${d.followedId}`), { followerCount: FieldValue.increment(delta) }, { merge: true });
+  await batch.commit();
 });

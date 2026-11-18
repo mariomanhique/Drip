@@ -90,6 +90,8 @@ class DripViewModel(
 
     var tab by mutableStateOf(Tab.FEED)
         private set
+    val feedCategory = mutableStateOf<Category?>(null)
+    val feedFollowingOnly = mutableStateOf(false)
     val stack = mutableStateListOf<Screen>()
     var message by mutableStateOf<String?>(null)
         private set

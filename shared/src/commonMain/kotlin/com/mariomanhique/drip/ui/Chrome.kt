@@ -101,7 +101,7 @@ fun HeroBlock(onDrop: () -> Unit, onRanks: () -> Unit) {
                 MonoLabel("✦  Drop a fit", color = Color.Black, size = 14, spacing = 2f)
             }
             Box(Modifier.border(1.dp, Color(0xFF3A3A44)).clickable(onClick = onRanks).padding(horizontal = 20.dp, vertical = 18.dp)) {
-                MonoLabel("♛  See the ranks", size = 14, spacing = 2f)
+                MonoLabel("♛  See the ranks", color = Color(0xFFF4F1E8), size = 14, spacing = 2f)
             }
         }
     }

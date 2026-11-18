@@ -19,6 +19,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +42,7 @@ val DripViolet = Color(0xFF8B5CF6)
 val DripLime = Color(0xFFA6FF00)
 val DripPink = Color(0xFFE91EAD)
 
-private val scheme: ColorScheme = darkColorScheme(
+private val darkScheme: ColorScheme = darkColorScheme(
     primary = DripLime,
     onPrimary = Color.Black,
     secondary = DripLime,
@@ -54,10 +56,24 @@ private val scheme: ColorScheme = darkColorScheme(
     error = Color(0xFFFB7185),
 )
 
+private val lightScheme: ColorScheme = lightColorScheme(
+    primary = Color(0xFF4D7C0F),
+    onPrimary = Color.White,
+    secondary = Color(0xFF4D7C0F),
+    onSecondary = Color.White,
+    background = Color(0xFFFFFFFF),
+    onBackground = Color(0xFF0A0A0D),
+    surface = Color(0xFFFAFAFA),
+    onSurface = Color(0xFF0A0A0D),
+    surfaceVariant = Color(0xFFEFEFF2),
+    onSurfaceVariant = Color(0xFF52525B),
+    error = Color(0xFFBE123C),
+)
+
 @Composable
 fun DripTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = scheme,
+        colorScheme = if (isSystemInDarkTheme()) darkScheme else lightScheme,
         shapes = androidx.compose.material3.Shapes(
             extraSmall = RoundedCornerShape(0.dp), small = RoundedCornerShape(0.dp),
             medium = RoundedCornerShape(0.dp), large = RoundedCornerShape(0.dp), extraLarge = RoundedCornerShape(0.dp),
@@ -67,7 +83,13 @@ fun DripTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun OutfitArt(outfit: Outfit, modifier: Modifier = Modifier, emojiSize: Int = 72) {
+fun OutfitArt(
+    outfit: Outfit,
+    modifier: Modifier = Modifier,
+    emojiSize: Int = 72,
+    contentScale: ContentScale = ContentScale.Crop,
+    alignment: Alignment = Alignment.BottomCenter,
+) {
     val colors = outfit.palette.map { Color(it) }.ifEmpty { listOf(Color.DarkGray, Color.Gray) }
     Box(
         modifier.background(Brush.verticalGradient(if (colors.size == 1) colors + colors else colors)),
@@ -77,7 +99,7 @@ fun OutfitArt(outfit: Outfit, modifier: Modifier = Modifier, emojiSize: Int = 72
             // Bottom-aligned crop keeps the outfit and trims the top of the frame, where faces usually are.
             AsyncImage(
                 model = outfit.photoUri, contentDescription = outfit.caption,
-                modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop, alignment = Alignment.BottomCenter,
+                modifier = Modifier.matchParentSize(), contentScale = contentScale, alignment = alignment,
             )
         } else Text(outfit.emoji, fontSize = emojiSize.sp)
         if (outfit.hidden) {

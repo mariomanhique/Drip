@@ -14,7 +14,6 @@ import com.mariomanhique.drip.domain.Rules
 import com.mariomanhique.drip.domain.User
 import com.mariomanhique.drip.domain.challengeStandings
 import com.mariomanhique.drip.domain.challengeVoteBlocker
-import com.mariomanhique.drip.domain.votesNeeded
 import com.mariomanhique.drip.domain.ChallengeVote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -195,8 +194,6 @@ class DripRepository(
             mine.authorId != me -> s.fail("Pick one of your own outfits")
             s.battles.count { b -> now() - b.createdAt < Rules.DAY_MS && listOfNotNull(b.outfitAId, b.outfitBId).any { s.outfit(it)?.authorId == me } } >= Rules.MAX_BATTLES_PER_DAY ->
                 s.fail("Daily showdown limit reached (${Rules.MAX_BATTLES_PER_DAY})")
-            s.votesNeeded(me) > 0 ->
-                s.fail("Vote on ${s.votesNeeded(me)} more look(s) to unlock a showdown")
             s.battles.any { it.active && (it.outfitAId == myOutfitId || it.outfitBId == myOutfitId) } ->
                 s.fail("This look is already in a showdown")
             else -> s.copy(

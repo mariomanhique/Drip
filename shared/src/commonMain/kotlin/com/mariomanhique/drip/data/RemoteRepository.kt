@@ -184,6 +184,8 @@ class RemoteRepository(private val backend: Backend) : DripStore {
                 rating = s?.int("rating") ?: 1000,
                 ratedBattles = s?.int("ratedBattles") ?: 0,
                 flagged = s?.bool("flagged") ?: false,
+                followerCount = s?.int("followerCount")?.coerceAtLeast(0),
+                followingCount = s?.int("followingCount")?.coerceAtLeast(0),
                 votesCast = s?.int("votesCast") ?: 0,
                 showdownsStarted = s?.int("showdownsStarted") ?: 0,
                 pointsTotal = s?.int("points") ?: 0,

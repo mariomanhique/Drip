@@ -53,6 +53,16 @@ class AndroidAuthService(private val appContext: Context) : AuthService {
         is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "That email is already registered"
         is com.google.firebase.auth.FirebaseAuthWeakPasswordException -> "Password is too weak (6+ characters)"
         is androidx.credentials.exceptions.GetCredentialCancellationException -> "Sign-in cancelled"
+        is androidx.credentials.exceptions.NoCredentialException -> {
+            runCatching {
+                activity.get()?.startActivity(
+                    android.content.Intent(android.provider.Settings.ACTION_ADD_ACCOUNT)
+                        .putExtra(android.provider.Settings.EXTRA_ACCOUNT_TYPES, arrayOf("com.google"))
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }
+            "Add a Google account to this device, then try again"
+        }
         else -> e.message ?: "Sign-in failed"
     }
 

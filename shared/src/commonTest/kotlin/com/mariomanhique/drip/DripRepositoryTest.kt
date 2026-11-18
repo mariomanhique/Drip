@@ -19,7 +19,6 @@ import kotlin.test.assertFalse
 import com.mariomanhique.drip.domain.challengeStandings
 import com.mariomanhique.drip.domain.nextChallengePair
 import com.mariomanhique.drip.domain.shareable
-import com.mariomanhique.drip.domain.votesNeeded
 
 class DripRepositoryTest {
     private fun repoAs(handle: String) = DripRepository().also { assertNull(it.login(handle, DEMO_PASSWORD)) }
@@ -220,13 +219,12 @@ class DripRepositoryTest {
     }
 
     @Test
-    fun voteToPlayRequiresVotesFirst() {
+    fun newUserCanStartShowdownWithoutVoting() {
         val repo = crowdRepo()
         repo.logout(); repo.login("voter1", DEMO_PASSWORD)
         repo.publish("Look", Category.VINTAGE, palette, "🧥", null)
         val id = repo.state.value.outfits.first { it.authorId == "v1" }.id
-        assertNotNull(repo.startBattle(id))
-        assertEquals(Rules.VOTES_PER_SHOWDOWN, repo.state.value.votesNeeded("v1"))
+        assertNull(repo.startBattle(id))
     }
 
     @Test

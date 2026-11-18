@@ -169,11 +169,5 @@ fun DripState.settle(now: Long): DripState {
     return s
 }
 
-/** Votes a user still has to cast before they may start another showdown (vote-to-play). */
-fun DripState.votesNeeded(userId: String): Int {
-    val u = user(userId) ?: return 0
-    return (Rules.VOTES_PER_SHOWDOWN * (u.showdownsStarted + 1) - u.votesCast).coerceAtLeast(0)
-}
-
 /** Sharing is locked while a showdown is live and opens once the result is final. */
 val Battle.shareable: Boolean get() = status == BattleStatus.CLOSED

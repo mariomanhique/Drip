@@ -15,4 +15,4 @@ fun MainViewController(auth: AuthService, backend: Backend) = ComposeUIViewContr
             initKoin(auth = auth, backend = backend)
         }
     },
-) { App(sharer = IosSharer, photoPicker = IosPhotoPicker) }
+) { App(sharer = IosSharer, photoPicker = IosPhotoPicker, iosStyle = true, nativeTabBar = { s, o -> IosNativeTabBar(s, o) }) }

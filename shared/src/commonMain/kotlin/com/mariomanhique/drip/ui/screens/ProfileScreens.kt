@@ -69,7 +69,7 @@ fun ProfileScreen(state: DripState, userId: String, vm: DripViewModel) {
     var showLedger by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Avatar(user, 72.dp)
             Column(Modifier.weight(1f)) {
@@ -120,7 +120,7 @@ fun ProfileScreen(state: DripState, userId: String, vm: DripViewModel) {
                 events.forEach {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(it.reason, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                        Text("+${it.points}", color = DripLime)
+                        Text("+${it.points}", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -162,7 +162,7 @@ fun EditProfileScreen(state: DripState, vm: DripViewModel) {
     var name by remember { mutableStateOf(me.displayName) }
     var bio by remember { mutableStateOf(me.bio) }
     var interests by remember { mutableStateOf(me.interests) }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Display name") }, singleLine = true)
         OutlinedTextField(bio, { bio = it }, Modifier.fillMaxWidth(), label = { Text("Bio") })
         SectionTitle("Style interests")
@@ -203,7 +203,7 @@ fun CreateOutfitScreen(state: DripState, challengeId: String?, vm: DripViewModel
     val picker = com.mariomanhique.drip.ui.LocalPhotoPicker.current
     val preview = Outfit("preview", "", caption, category, palette, emoji, 0, photoUri = photoUri)
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         challenge?.let { Pill("🏆 Entering: ${it.title}") }
         Box(Modifier.fillMaxWidth().height(320.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))) {
             OutfitArt(preview, Modifier.matchParentSize())
@@ -280,7 +280,7 @@ fun SettingsScreen(vm: DripViewModel) {
 
 @Composable
 fun RulesScreen() {
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle("Community rules")
         Rules.communityRules.forEach { Text("• $it") }
         SectionTitle("How Drip Points work")
@@ -297,7 +297,7 @@ fun RulesScreen() {
 fun ModerationScreen(state: DripState, vm: DripViewModel) {
     val open = state.reports.filter { it.status == ReportStatus.OPEN }
     val openChallenges = state.challenges.filter { !it.closed }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SectionTitle("Open reports")
         if (open.isEmpty()) Text("Nothing to review 🎉")
         open.forEach { r ->

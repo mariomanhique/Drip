@@ -1,6 +1,8 @@
 package com.mariomanhique.drip
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,6 +43,7 @@ import com.mariomanhique.drip.ui.LocalSharer
 import com.mariomanhique.drip.ui.PhotoPicker
 import com.mariomanhique.drip.ui.Sharer
 import com.mariomanhique.drip.ui.DripHeader
+import com.mariomanhique.drip.ui.NativeTabBar
 import com.mariomanhique.drip.ui.DripTheme
 import com.mariomanhique.drip.ui.DripViewModel
 import com.mariomanhique.drip.ui.Screen
@@ -61,8 +65,18 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(sharer: Sharer = Sharer { _, _ -> false }, photoPicker: PhotoPicker = PhotoPicker { it(null) }) {
-    CompositionLocalProvider(LocalSharer provides sharer, LocalPhotoPicker provides photoPicker) {
+fun App(
+    sharer: Sharer = Sharer { _, _ -> false },
+    photoPicker: PhotoPicker = PhotoPicker { it(null) },
+    iosStyle: Boolean = false,
+    nativeTabBar: NativeTabBar? = null,
+) {
+    CompositionLocalProvider(
+        LocalSharer provides sharer,
+        LocalPhotoPicker provides photoPicker,
+        com.mariomanhique.drip.ui.LocalIosStyle provides iosStyle,
+        com.mariomanhique.drip.ui.LocalNativeTabBar provides nativeTabBar,
+    ) {
         Box(Modifier.dismissKeyboardOnOutsideInteraction()) { AppContent() }
     }
 }
@@ -87,39 +101,42 @@ private fun AppContent() {
         }
         val screen = vm.stack.lastOrNull()
         BackHandler(enabled = screen != null) { vm.back() }
-        Scaffold(
-            topBar = { if (screen != null) BackBar(onBack = { vm.back() }) },
-            bottomBar = {
-                NavigationBar {
-                    Tab.entries.forEach {
-                        NavigationBarItem(
-                            selected = vm.tab == it && screen == null,
-                            onClick = { vm.selectTab(it) },
-                            icon = { Text(it.icon) },
-                            label = { Text(it.label) },
-                        )
+        val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val floating = com.mariomanhique.drip.ui.LocalNativeTabBar.current != null
+        val barInset = if (floating) 49.dp + androidx.compose.foundation.layout.WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() else 0.dp
+        Box(Modifier.fillMaxSize()) {
+            CompositionLocalProvider(com.mariomanhique.drip.ui.LocalBottomBarInset provides barInset) {
+                Scaffold(
+                    topBar = { if (screen != null) BackBar(onBack = { vm.back() }) },
+                    bottomBar = {
+                        if (!floating) com.mariomanhique.drip.ui.DripBottomBar(if (screen == null) vm.tab else null) { vm.selectTab(it) }
+                    },
+                    snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = barInset)) },
+                ) { padding ->
+                    Box(if (floating) Modifier.padding(top = padding.calculateTopPadding()) else Modifier.padding(padding)) {
+                        when (screen) {
+                            null -> when (vm.tab) {
+                                Tab.FEED -> FeedScreen(state, vm, feedListState)
+                                Tab.BATTLES -> BattlesScreen(state, vm)
+                                Tab.CHALLENGES -> ChallengesScreen(state, vm)
+                                Tab.RANKS -> RanksScreen(state, vm)
+                                Tab.PROFILE -> ProfileScreen(state, state.currentUserId!!, vm)
+                            }
+                            is Screen.OutfitDetail -> OutfitDetailScreen(state, screen.outfitId, vm)
+                            is Screen.ChallengeDetail -> ChallengeDetailScreen(state, screen.challengeId, vm)
+                            is Screen.UserProfile -> ProfileScreen(state, screen.userId, vm)
+                            is Screen.Create -> CreateOutfitScreen(state, screen.challengeId, vm)
+                            Screen.EditProfile -> EditProfileScreen(state, vm)
+                            Screen.Settings -> SettingsScreen(vm)
+                            Screen.Moderation -> ModerationScreen(state, vm)
+                            Screen.Rules -> RulesScreen()
+                        }
                     }
                 }
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                when (screen) {
-                    null -> when (vm.tab) {
-                        Tab.FEED -> FeedScreen(state, vm)
-                        Tab.BATTLES -> BattlesScreen(state, vm)
-                        Tab.CHALLENGES -> ChallengesScreen(state, vm)
-                        Tab.RANKS -> RanksScreen(state, vm)
-                        Tab.PROFILE -> ProfileScreen(state, state.currentUserId!!, vm)
-                    }
-                    is Screen.OutfitDetail -> OutfitDetailScreen(state, screen.outfitId, vm)
-                    is Screen.ChallengeDetail -> ChallengeDetailScreen(state, screen.challengeId, vm)
-                    is Screen.UserProfile -> ProfileScreen(state, screen.userId, vm)
-                    is Screen.Create -> CreateOutfitScreen(state, screen.challengeId, vm)
-                    Screen.EditProfile -> EditProfileScreen(state, vm)
-                    Screen.Settings -> SettingsScreen(vm)
-                    Screen.Moderation -> ModerationScreen(state, vm)
-                    Screen.Rules -> RulesScreen()
+            }
+            if (floating) {
+                Box(Modifier.align(Alignment.BottomCenter)) {
+                    com.mariomanhique.drip.ui.DripBottomBar(if (screen == null) vm.tab else null) { vm.selectTab(it) }
                 }
             }
         }
@@ -127,7 +144,10 @@ private fun AppContent() {
 }
 
 @Composable
-private fun AuthHost(vm: DripViewModel) = AuthScreen(vm)
+private fun AuthHost(vm: DripViewModel) = androidx.compose.material3.Surface(
+    color = androidx.compose.material3.MaterialTheme.colorScheme.background,
+    modifier = Modifier.fillMaxSize(),
+) { AuthScreen(vm) }
 
 /** Taps on empty space and scrolling both close the keyboard. */
 @Composable

@@ -5,7 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,14 +54,14 @@ import com.mariomanhique.drip.ui.Screen
 import com.mariomanhique.drip.ui.SectionTitle
 
 @Composable
-fun FeedScreen(state: DripState, vm: DripViewModel) {
-    var category by remember { mutableStateOf<Category?>(null) }
-    var followingOnly by remember { mutableStateOf(false) }
+fun FeedScreen(state: DripState, vm: DripViewModel, listState: LazyListState = rememberLazyListState()) {
+    var category by vm.feedCategory
+    var followingOnly by vm.feedFollowingOnly
     val outfits = state.visibleOutfits()
         .filter { category == null || it.category == category }
         .filter { !followingOnly || state.isFollowing(it.authorId) }
 
-    LazyColumn(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxWidth(), listState, contentPadding = com.mariomanhique.drip.ui.bottomBarListPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             com.mariomanhique.drip.ui.HeroBlock({ vm.open(Screen.Create()) }, { vm.selectTab(com.mariomanhique.drip.ui.Tab.RANKS) })
         }
@@ -99,16 +104,35 @@ fun OutfitCard(state: DripState, outfit: Outfit, vm: DripViewModel) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(outfit.caption)
                 state.challenges.firstOrNull { it.id == outfit.challengeId }?.let {
-                    Text("🏆 ${it.title}", color = DripLime, style = MaterialTheme.typography.labelMedium)
+                    Text("🏆 ${it.title}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     val given = me != null && me in outfit.propsFrom
                     TextButton({ vm.repo.toggleProps(outfit.id) }, enabled = outfit.authorId != me) {
-                        Text(if (given) "🔥 ${outfit.props} Fire" else "🤍 ${outfit.props} Fire")
+                        androidx.compose.material3.Icon(
+                            if (given) com.mariomanhique.drip.ui.FireFilled else com.mariomanhique.drip.ui.FireOutlined,
+                            contentDescription = "Fire",
+                            tint = if (given) androidx.compose.ui.graphics.Color(0xFFFF6B1A) else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("${outfit.props}", color = MaterialTheme.colorScheme.onSurface)
                     }
-                    TextButton({ vm.open(Screen.OutfitDetail(outfit.id)) }) { Text("💬 ${outfit.comments.size}") }
-                    TextButton({ vm.repo.toggleSave(outfit.id) }) {
-                        Text(if (me != null && me in outfit.savedBy) "🔖 Saved" else "🔖 Save")
+                    TextButton({ vm.open(Screen.OutfitDetail(outfit.id)) }) {
+                        androidx.compose.material3.Icon(
+                            com.mariomanhique.drip.ui.CommentOutlined, "Comments",
+                            tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("${outfit.comments.size}", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    val saved = me != null && me in outfit.savedBy
+                    androidx.compose.material3.IconButton({ vm.repo.toggleSave(outfit.id) }) {
+                        androidx.compose.material3.Icon(
+                            if (saved) com.mariomanhique.drip.ui.BookmarkFilled else com.mariomanhique.drip.ui.BookmarkOutlined,
+                            "Save", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
             }
@@ -124,7 +148,7 @@ fun OutfitDetailScreen(state: DripState, outfitId: String, vm: DripViewModel) {
     var comment by remember { mutableStateOf("") }
     var reporting by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = com.mariomanhique.drip.ui.LocalBottomBarInset.current), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutfitCard(state, outfit, vm)
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (outfit.authorId == me) {

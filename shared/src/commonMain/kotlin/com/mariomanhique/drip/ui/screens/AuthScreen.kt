@@ -44,7 +44,7 @@ fun AuthScreen(vm: DripViewModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
-        Text("DRIP", fontSize = 48.sp, fontWeight = FontWeight.Black, color = DripLime)
+        Text("DRIP", fontSize = 48.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
         Text(
             "Unleash your style potential, drip by drip.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
