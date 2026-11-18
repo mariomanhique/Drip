@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
@@ -83,58 +86,113 @@ fun FeedScreen(state: DripState, vm: DripViewModel, listState: LazyListState = r
 fun OutfitCard(state: DripState, outfit: Outfit, vm: DripViewModel) {
     val author = state.user(outfit.authorId)
     val me = state.currentUserId
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column {
+    var showComments by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().clickable { vm.openProfile(outfit.authorId) }.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            author?.let { Avatar(it, 32.dp) }
+            Column(Modifier.weight(1f)) {
+                Text(author?.handle ?: "unknown", fontWeight = FontWeight.SemiBold)
+                state.challenges.firstOrNull { it.id == outfit.challengeId }?.let {
+                    Text("🏆 ${it.title}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Pill("${outfit.category.emoji} ${outfit.category.label}")
+        }
+        OutfitArt(
+            outfit,
+            Modifier.fillMaxWidth().aspectRatio(4f / 5f).clickable { vm.open(Screen.OutfitDetail(outfit.id)) },
+        )
+        Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            val given = me != null && me in outfit.propsFrom
+            TextButton({ vm.repo.toggleProps(outfit.id) }, enabled = outfit.authorId != me) {
+                androidx.compose.material3.Icon(
+                    if (given) com.mariomanhique.drip.ui.FireFilled else com.mariomanhique.drip.ui.FireOutlined,
+                    contentDescription = "Fire",
+                    tint = if (given) androidx.compose.ui.graphics.Color(0xFFFF6B1A) else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(26.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("${outfit.props}", color = MaterialTheme.colorScheme.onSurface)
+            }
+            TextButton({ showComments = true }) {
+                androidx.compose.material3.Icon(
+                    com.mariomanhique.drip.ui.CommentOutlined, "Comments",
+                    tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(26.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("${outfit.comments.size}", color = MaterialTheme.colorScheme.onSurface)
+            }
+            Spacer(Modifier.weight(1f))
+            val saved = me != null && me in outfit.savedBy
+            androidx.compose.material3.IconButton({ vm.repo.toggleSave(outfit.id) }) {
+                androidx.compose.material3.Icon(
+                    if (saved) com.mariomanhique.drip.ui.BookmarkFilled else com.mariomanhique.drip.ui.BookmarkOutlined,
+                    "Save", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(26.dp),
+                )
+            }
+        }
+        if (outfit.caption.isNotBlank()) {
+            Text(
+                androidx.compose.ui.text.buildAnnotatedString {
+                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold))
+                    append(author?.handle ?: "unknown")
+                    pop()
+                    append(" ${outfit.caption}")
+                },
+                Modifier.padding(horizontal = 12.dp),
+            )
+        }
+    }
+    if (showComments) CommentsSheet(state, outfit, vm) { showComments = false }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun CommentsSheet(state: DripState, outfit: Outfit, vm: DripViewModel, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    val me = state.currentUserId?.let { state.user(it) }
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.85f).imePadding()) {
+            Text(
+                "Comments", Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium,
+            )
+            LazyColumn(Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (outfit.comments.isEmpty()) item {
+                    Text("No comments yet. Start the conversation.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                items(outfit.comments.size) { i ->
+                    val c = outfit.comments[i]
+                    val author = state.user(c.authorId)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        author?.let { Avatar(it, 36.dp) }
+                        Column {
+                            Text("${author?.handle ?: "unknown"}", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                            Text(c.text)
+                        }
+                    }
+                }
+            }
             Row(
-                Modifier.fillMaxWidth().clickable { vm.openProfile(outfit.authorId) }.padding(12.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                author?.let { Avatar(it) }
-                Column(Modifier.weight(1f)) {
-                    Text(author?.displayName ?: "Unknown", fontWeight = FontWeight.SemiBold)
-                    Text("@${author?.handle}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Pill("${outfit.category.emoji} ${outfit.category.label}")
-            }
-            OutfitArt(
-                outfit,
-                Modifier.fillMaxWidth().height(260.dp).clickable { vm.open(Screen.OutfitDetail(outfit.id)) },
-            )
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(outfit.caption)
-                state.challenges.firstOrNull { it.id == outfit.challengeId }?.let {
-                    Text("🏆 ${it.title}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val given = me != null && me in outfit.propsFrom
-                    TextButton({ vm.repo.toggleProps(outfit.id) }, enabled = outfit.authorId != me) {
-                        androidx.compose.material3.Icon(
-                            if (given) com.mariomanhique.drip.ui.FireFilled else com.mariomanhique.drip.ui.FireOutlined,
-                            contentDescription = "Fire",
-                            tint = if (given) androidx.compose.ui.graphics.Color(0xFFFF6B1A) else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("${outfit.props}", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    TextButton({ vm.open(Screen.OutfitDetail(outfit.id)) }) {
-                        androidx.compose.material3.Icon(
-                            com.mariomanhique.drip.ui.CommentOutlined, "Comments",
-                            tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("${outfit.comments.size}", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    val saved = me != null && me in outfit.savedBy
-                    androidx.compose.material3.IconButton({ vm.repo.toggleSave(outfit.id) }) {
-                        androidx.compose.material3.Icon(
-                            if (saved) com.mariomanhique.drip.ui.BookmarkFilled else com.mariomanhique.drip.ui.BookmarkOutlined,
-                            "Save", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp),
-                        )
-                    }
-                }
+                me?.let { Avatar(it, 36.dp) }
+                OutlinedTextField(
+                    text, { text = it }, Modifier.weight(1f),
+                    placeholder = { Text("What do you think of this?") },
+                    shape = RoundedCornerShape(50), singleLine = true,
+                )
+                TextButton({ vm.repo.addComment(outfit.id, text); text = "" }, enabled = text.isNotBlank()) { Text("Post") }
             }
         }
     }
